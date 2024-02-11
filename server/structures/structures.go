@@ -10,6 +10,7 @@ type User struct {
 	Password    string  `json:"password"`
 	Birthday    string  `json:"birthday"`
 	Rating      float64 `json:"rating"`
+	CardID      int     `json:"cardid"`
 }
 
 type UserVer struct {
@@ -19,27 +20,40 @@ type UserVer struct {
 
 type Order struct {
 	ID             int    `json:"id"`
+	BookExemplarID int    `json:"bookexemplarid"`
+	UserID         int    `json:"clientid"`
+	OrderDate      string `json:"orderdate"`
+}
+
+type OrderResponse struct {
+	ID             int    `json:"id"`
 	BookExemplarID []int  `json:"bookexemplarid"`
 	UserID         int    `json:"clientid"`
 	OrderDate      string `json:"orderdate"`
-	RefundDate     string `json:"refunddate"`
 }
 
 type BookExemplar struct {
-	ID     int `json:"id"`
-	BookID int `json:"bookid"`
-	State  int `json:"stateid"`
+	ID     int    `json:"id"`
+	BookID int    `json:"bookid"`
+	State  int    `json:"stateid"`
+	Info   string `json:"info"`
 }
 
 type Book struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	PublisherID int    `json:"publisherid"`
-	GenreID     int    `json:"genreid"`
-	BookTypeID  int    `json:"booktypeid"`
-	BooksQty    int    `json:"booksqty"`
-	WritingDate string `json:"writingdate"`
-	Status      string `json:"status"`
+	ID              int    `json:"id"`
+	Name            string `json:"name"`
+	PublisherID     int    `json:"publisherid"`
+	GenreID         int    `json:"genreid"`
+	SeriesID        int    `json:"booktypeid"`
+	Isbn            string `json:"isbn"`
+	PubliishingYear string `json:"publishingyear"`
+	Pages           int    `json:"pages"`
+	BindingID       int    `json:"binding"`
+	Size            string `json:"size"`
+	Format          string `json:"format"`
+	BookAvailable   bool   `json:"booksqty"`
+	Circulation     int    `json:"circulation"`
+	Description     string `json:"description"`
 }
 
 type AuthorBook struct {
@@ -49,7 +63,7 @@ type AuthorBook struct {
 
 type AuthorBookResponse struct {
 	AuthorID []int `json:"authorid"`
-	BookID   int `json:"bookid"`
+	BookID   int   `json:"bookid"`
 }
 
 type Author struct {
@@ -57,16 +71,11 @@ type Author struct {
 	Name       string `json:"name"`
 	Surname    string `json:"surname"`
 	FatherName string `json:"fathername"`
-	Birthday   string `json:"birthday"`
 }
 
 type Publisher struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Postcode    string `json:"postcode"`
-	Address     string `json:"address"`
-	PhoneNumber string `json:"phonenumber"`
-	Email       string `json:"email"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type Genre struct {
@@ -74,7 +83,7 @@ type Genre struct {
 	Name string `json:"name"`
 }
 
-type BookType struct {
+type Series struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
@@ -86,12 +95,18 @@ type Event struct {
 	UserID    int    `json:"userid"`
 	EventDate string `json:"eventdate"`
 	PeopleQty int    `json:"peopleqty"`
+	Info      string `json:"info"`
+}
+type Bindings struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type Room struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Capacity int    `json:"capacity"`
+	Info     string `json:"info"`
 }
 
 type Bucket struct {
@@ -118,7 +133,7 @@ var Publishers = map[int]Publisher{}
 
 var Genres = map[int]Genre{}
 
-var BookTypes = map[int]BookType{}
+var SeriesSt = map[int]Series{}
 
 var Events = map[int]Event{}
 

@@ -177,12 +177,12 @@ func GetGenre(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetBookType(w http.ResponseWriter, r *http.Request) {
+func GetSeries(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	BtResp := postgresql.SelectBookType(id)
+	BtResp := postgresql.SelectSeries(id)
 	resp, err := json.Marshal(BtResp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -294,6 +294,22 @@ func GetBucket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	resp, err := json.Marshal(st.Buckets[id])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+func GetBinding(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	BResp := postgresql.SelectBindings(id)
+	resp, err := json.Marshal(BResp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

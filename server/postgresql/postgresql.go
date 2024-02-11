@@ -20,7 +20,7 @@ func SelectAllUsers() map[int]structures.User {
 		panic(err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM postgres.public.user")
+	rows, err := db.Query("SELECT * FROM postgres.public.users")
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +31,7 @@ func SelectAllUsers() map[int]structures.User {
 	for rows.Next() {
 		u := structures.User{}
 
-		err := rows.Scan(&u.ID, &u.Name, &u.Surname, &u.FatherName, &u.PhoneNumber, &u.Email, &u.Birthday, &u.Rating, &u.Password)
+		err := rows.Scan(&u.ID, &u.Name, &u.Surname, &u.FatherName, &u.PhoneNumber, &u.Email, &u.Birthday, &u.CardID, &u.Rating, &u.Password)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -52,7 +52,7 @@ func AddUser(u *structures.User) {
 	}
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.user (name, surname, father_name, phone_number, email, birthday, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.Rating, u.Password)
+	_, err = db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -71,7 +71,7 @@ func SelectUserData(u *structures.UserVer) structures.User {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.user WHERE password='%s' AND email='%s'", u.Password, u.Email)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.users WHERE password='%s' AND email='%s'", u.Password, u.Email)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -79,7 +79,7 @@ func SelectUserData(u *structures.UserVer) structures.User {
 	defer rows.Close()
 	us := structures.User{}
 	for rows.Next() {
-		err := rows.Scan(&us.ID, &us.Name, &us.Surname, &us.FatherName, &us.PhoneNumber, &us.Email, &us.Birthday, &us.Rating, &us.Password)
+		err := rows.Scan(&us.ID, &us.Name, &us.Surname, &us.FatherName, &us.PhoneNumber, &us.Email, &us.Birthday, &us.CardID, &us.Rating, &us.Password)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -109,7 +109,7 @@ func SelectAllOrders(u *structures.User) map[int]structures.Order {
 	for rows.Next() {
 		o := structures.Order{}
 
-		err := rows.Scan(&o.ID, &o.BookExemplarID, &o.UserID, &o.OrderDate, &o.RefundDate)
+		err := rows.Scan(&o.ID, &o.BookExemplarID, &o.UserID, &o.OrderDate)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -138,7 +138,7 @@ func SelectBookEx(id int) structures.BookExemplar {
 	Bx := structures.BookExemplar{}
 
 	for rows.Next() {
-		err := rows.Scan(&Bx.ID, &Bx.BookID, &Bx.State)
+		err := rows.Scan(&Bx.ID, &Bx.BookID, &Bx.State, &Bx.Info)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -156,7 +156,7 @@ func SelectBook(id int) structures.Book {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.book WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.books WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -166,7 +166,7 @@ func SelectBook(id int) structures.Book {
 	B := structures.Book{}
 
 	for rows.Next() {
-		err := rows.Scan(&B.ID, &B.Name, &B.PublisherID, &B.GenreID, &B.BookTypeID, &B.BooksQty, &B.WritingDate, &B.Status)
+		err := rows.Scan(&B.ID, &B.Name, &B.PublisherID, &B.GenreID, &B.SeriesID, &B.Isbn, &B.PubliishingYear, &B.Pages, &B.BindingID, &B.Size, &B.Format, &B.Circulation, &B.Description)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -213,7 +213,7 @@ func SelectAuthor(id int) structures.Author {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.author WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.authors WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -223,7 +223,7 @@ func SelectAuthor(id int) structures.Author {
 	A := structures.Author{}
 
 	for rows.Next() {
-		err := rows.Scan(&A.ID, &A.Name, &A.Surname, &A.FatherName, &A.Birthday)
+		err := rows.Scan(&A.ID, &A.Name, &A.Surname, &A.FatherName)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -240,7 +240,7 @@ func SelectPublisher(id int) structures.Publisher {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.publisher WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.publishers WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -250,7 +250,7 @@ func SelectPublisher(id int) structures.Publisher {
 	P := structures.Publisher{}
 
 	for rows.Next() {
-		err := rows.Scan(&P.ID, &P.Name, &P.Postcode, &P.Address, &P.PhoneNumber, &P.Email)
+		err := rows.Scan(&P.ID, &P.Name)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -267,7 +267,7 @@ func SelectGenre(id int) structures.Genre {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.genre WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.genres WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -286,7 +286,7 @@ func SelectGenre(id int) structures.Genre {
 	return G
 }
 
-func SelectBookType(id int) structures.BookType {
+func SelectSeries(id int) structures.Series {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
@@ -294,23 +294,23 @@ func SelectBookType(id int) structures.BookType {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.booktype WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.series WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
-	Bt := structures.BookType{}
+	S := structures.Series{}
 
 	for rows.Next() {
-		err := rows.Scan(&Bt.ID, &Bt.Name)
+		err := rows.Scan(&S.ID, &S.Name)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 	}
-	return Bt
+	return S
 }
 
 func SelectEvent(id int) structures.Event {
@@ -321,7 +321,7 @@ func SelectEvent(id int) structures.Event {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.event WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.events WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -331,7 +331,7 @@ func SelectEvent(id int) structures.Event {
 	E := structures.Event{}
 
 	for rows.Next() {
-		err := rows.Scan(&E.ID, &E.Name, &E.RoomID, &E.UserID, &E.EventDate, &E.PeopleQty)
+		err := rows.Scan(&E.ID, &E.Name, &E.RoomID, &E.UserID, &E.EventDate, &E.PeopleQty, &E.Info)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -348,7 +348,7 @@ func SelectRoom(id int) structures.Room {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.room WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.rooms WHERE id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -358,7 +358,7 @@ func SelectRoom(id int) structures.Room {
 	R := structures.Room{}
 
 	for rows.Next() {
-		err := rows.Scan(&R.ID, &R.Name, &R.Capacity)
+		err := rows.Scan(&R.ID, &R.Name, &R.Capacity, &R.Info)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -377,7 +377,7 @@ func AddEvent(e *structures.Event) {
 	}
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.event (name, room_id, user_id, event_date, people_qty) VALUES ($1, $2, $3, $4, $5)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty)
+	_, err = db.Exec("INSERT INTO public.events (name, room_id, user_id, event_date, people_count, info) VALUES ($1, $2, $3, $4, $5, $6)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty, e.Info)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -397,7 +397,7 @@ func AddOrder(o *structures.Order) {
 	}
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.order (book_exemplar_id, user_id, order_date, refund_date) VALUES ($1, $2, $3, $4)", o.BookExemplarID, o.UserID, o.OrderDate, o.RefundDate)
+	_, err = db.Exec("INSERT INTO public.orders (book_exemplar_id, user_id, order_date) VALUES ($1, $2, $3)", o.BookExemplarID, o.UserID, o.OrderDate)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -415,11 +415,38 @@ func DelEv(id int) error {
 	if err != nil {
 		return err
 	}
-	query := fmt.Sprintf("DELETE FROM public.event WHERE id=%d", id)
+	query := fmt.Sprintf("DELETE FROM public.events WHERE id=%d", id)
 	_, err = db.Exec(query)
 	if err != nil {
 		fmt.Println("problem with deleting event", err)
 		return err
 	}
 	return nil
+}
+
+func SelectBindings(id int) structures.Bindings {
+	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	query := fmt.Sprintf("SELECT * FROM postgres.public.bindings WHERE id=%d", id)
+	rows, err := db.Query(query)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	B := structures.Bindings{}
+
+	for rows.Next() {
+		err := rows.Scan(&B.ID, &B.Name)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+	}
+	return B
 }
