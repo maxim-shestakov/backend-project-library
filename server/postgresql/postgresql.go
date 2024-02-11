@@ -88,7 +88,7 @@ func SelectUserData(u *structures.UserVer) structures.User {
 	return us
 }
 
-func SelectAllOrders(u *structures.User) map[int]structures.Order {
+func SelectAllOrders(id int) map[int]structures.Order {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
@@ -97,7 +97,7 @@ func SelectAllOrders(u *structures.User) map[int]structures.Order {
 		panic(err)
 	}
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.orders WHERE user_id=%d", u.ID)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.orders WHERE user_id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
@@ -121,8 +121,6 @@ func SelectAllOrders(u *structures.User) map[int]structures.Order {
 
 func SelectBookEx(id int) structures.BookExemplar {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -134,11 +132,9 @@ func SelectBookEx(id int) structures.BookExemplar {
 		panic(err)
 	}
 	defer rows.Close()
-
 	Bx := structures.BookExemplar{}
-
 	for rows.Next() {
-		err := rows.Scan(&Bx.ID, &Bx.BookID, &Bx.State, &Bx.Info)
+		err := rows.Scan(&Bx.ID, &Bx.BookID, &Bx.StateID, &Bx.Info)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -149,8 +145,6 @@ func SelectBookEx(id int) structures.BookExemplar {
 
 func SelectBook(id int) structures.Book {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -166,7 +160,7 @@ func SelectBook(id int) structures.Book {
 	B := structures.Book{}
 
 	for rows.Next() {
-		err := rows.Scan(&B.ID, &B.Name, &B.PublisherID, &B.GenreID, &B.SeriesID, &B.Isbn, &B.PubliishingYear, &B.Pages, &B.BindingID, &B.Size, &B.Format, &B.Circulation, &B.Description)
+		err := rows.Scan(&B.ID, &B.Name, &B.PublisherID, &B.GenreID, &B.SeriesID, &B.Isbn, &B.PubliishingYear, &B.Pages, &B.BindingID, &B.Size, &B.Format, &B.Circulation, &B.Annotation)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -177,7 +171,6 @@ func SelectBook(id int) structures.Book {
 
 func SelectAuthorsBook(id int) structures.AuthorBookResponse {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -195,7 +188,7 @@ func SelectAuthorsBook(id int) structures.AuthorBookResponse {
 
 	for rows.Next() {
 		Ab := structures.AuthorBook{}
-		err := rows.Scan(&Ab.AuthorID, &Ab.BookID)
+		err := rows.Scan(&Ab.BookID, &Ab.AuthorID)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -207,7 +200,7 @@ func SelectAuthorsBook(id int) structures.AuthorBookResponse {
 
 func SelectAuthor(id int) structures.Author {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -234,7 +227,7 @@ func SelectAuthor(id int) structures.Author {
 
 func SelectPublisher(id int) structures.Publisher {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -261,7 +254,7 @@ func SelectPublisher(id int) structures.Publisher {
 
 func SelectGenre(id int) structures.Genre {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -288,7 +281,7 @@ func SelectGenre(id int) structures.Genre {
 
 func SelectSeries(id int) structures.Series {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -315,7 +308,7 @@ func SelectSeries(id int) structures.Series {
 
 func SelectEvent(id int) structures.Event {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -342,7 +335,7 @@ func SelectEvent(id int) structures.Event {
 
 func SelectRoom(id int) structures.Room {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -369,7 +362,6 @@ func SelectRoom(id int) structures.Room {
 
 func AddEvent(e *structures.Event) {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -389,7 +381,6 @@ func AddEvent(e *structures.Event) {
 
 func AddOrder(o *structures.Order) {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -409,7 +400,6 @@ func AddOrder(o *structures.Order) {
 
 func DelEv(id int) error {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -426,7 +416,7 @@ func DelEv(id int) error {
 
 func SelectBindings(id int) structures.Bindings {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err)

@@ -33,10 +33,10 @@ type OrderResponse struct {
 }
 
 type BookExemplar struct {
-	ID     int    `json:"id"`
-	BookID int    `json:"bookid"`
-	State  int    `json:"stateid"`
-	Info   string `json:"info"`
+	ID      int    `json:"id"`
+	BookID  int    `json:"bookid"`
+	StateID int    `json:"stateid"`
+	Info    string `json:"info"`
 }
 
 type Book struct {
@@ -53,7 +53,7 @@ type Book struct {
 	Format          string `json:"format"`
 	BookAvailable   bool   `json:"booksqty"`
 	Circulation     int    `json:"circulation"`
-	Description     string `json:"description"`
+	Annotation      string `json:"annotation"`
 }
 
 type AuthorBook struct {

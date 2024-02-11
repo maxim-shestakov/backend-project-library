@@ -9,8 +9,6 @@ import (
 
 	"library_project/server/postgresql"
 	st "library_project/server/structures"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
@@ -43,19 +41,12 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOrders(w http.ResponseWriter, r *http.Request) {
-	var user st.User
-	var buf bytes.Buffer
-	// читаем тело запроса
-	_, err := buf.ReadFrom(r.Body)
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err = json.Unmarshal(buf.Bytes(), &user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	st.Orders = postgresql.SelectAllOrders(&user)
+	st.Orders = postgresql.SelectAllOrders(id)
 	resp, err := json.Marshal(st.Orders)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -260,7 +251,7 @@ func PostOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -289,7 +280,7 @@ func PostBucket(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBucket(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
