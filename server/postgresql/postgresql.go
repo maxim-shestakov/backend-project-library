@@ -88,7 +88,7 @@ func SelectUserData(u *structures.UserVer) structures.User {
 	return us
 }
 
-func SelectAllOrders(id int) map[int]structures.Order {
+func SelectAllOrders(id int) structures.OrderResponse {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
@@ -104,17 +104,16 @@ func SelectAllOrders(id int) map[int]structures.Order {
 	}
 	defer rows.Close()
 
-	Orders := map[int]structures.Order{}
+	Orders := structures.OrderResponse{}
 
 	for rows.Next() {
 		o := structures.Order{}
-
 		err := rows.Scan(&o.ID, &o.BookExemplarID, &o.UserID, &o.OrderDate)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		Orders[o.ID] = o
+		Orders.BookExemplarID = append(Orders.BookExemplarID, o.BookExemplarID)
 	}
 	return Orders
 }

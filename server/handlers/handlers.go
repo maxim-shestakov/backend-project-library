@@ -41,13 +41,14 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOrders(w http.ResponseWriter, r *http.Request) {
+	var ordresp st.OrderResponse
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	st.Orders = postgresql.SelectAllOrders(id)
-	resp, err := json.Marshal(st.Orders)
+	ordresp = postgresql.SelectAllOrders(id)
+	resp, err := json.Marshal(ordresp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
