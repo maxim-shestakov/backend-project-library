@@ -16,6 +16,7 @@ func main() {
 	r.Get("/library/orders", h.GetOrders)
 	r.Get("/library/bookex", h.GetBookEx)
 	r.Get("/library/book", h.GetBook)
+	r.Get("/library/books", h.GetBooks)
 	r.Get("/library/bookauthor", h.GetAuthorBook)
 	r.Get("/library/author", h.GetAuthor)
 	r.Get("/library/publisher", h.GetPublisher)

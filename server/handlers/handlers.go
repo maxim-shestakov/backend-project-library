@@ -105,6 +105,18 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+func GetBooks(w http.ResponseWriter, r *http.Request) {
+	BooksResp := postgresql.SelectBooks()
+	resp, err := json.Marshal(BooksResp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
 func GetAuthorBook(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
@@ -280,12 +292,12 @@ func PostBasket(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func GetBucket(w http.ResponseWriter, r *http.Request) {
+func GetBasket(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	resp, err := json.Marshal(st.Buckets[id])
+	resp, err := json.Marshal(st.Baskets[id])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
