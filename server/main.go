@@ -24,10 +24,13 @@ func main() {
 	r.Get("/library/event", h.GetEvent)
 	r.Get("/library/room", h.GetRoom)
 	r.Get("/library/bindings", h.GetBinding)
-	r.Delete("/library/event", h.DeleteEvent)
-	r.Post("/library/event", h.PostEvent)
+	r.Get("/library/basket", h.GetBasket)
+	r.Delete("/library/events", h.DeleteEvent)
+	r.Post("/library/events", h.PostEvent)
 	r.Post("/library/orders", h.PostOrder)
 	r.Post("/library/users", h.PostUser)
+	r.Post("library/baskets", h.PostBasket)
+
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		fmt.Printf("ошибка запуска сервера: %s\n", err.Error())
 		return

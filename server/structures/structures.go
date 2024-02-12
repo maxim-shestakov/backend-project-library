@@ -109,7 +109,7 @@ type Room struct {
 	Info     string `json:"info"`
 }
 
-type Bucket struct {
+type Basket struct {
 	UserID         int   `json:"userid"`
 	BookExemplarID []int `json:"bookexemplarid"`
 }
@@ -139,4 +139,4 @@ var Events = map[int]Event{}
 
 var Rooms = map[int]Room{}
 
-var Buckets = map[int]Bucket{}
+var Baskets = map[int]Basket{}

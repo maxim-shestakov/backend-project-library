@@ -263,8 +263,8 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func PostBucket(w http.ResponseWriter, r *http.Request) {
-	var Bucket st.Bucket
+func PostBasket(w http.ResponseWriter, r *http.Request) {
+	var Basket st.Basket
 	var buf bytes.Buffer
 	// читаем тело запроса
 	_, err := buf.ReadFrom(r.Body)
@@ -272,11 +272,11 @@ func PostBucket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err = json.Unmarshal(buf.Bytes(), &Bucket); err != nil {
+	if err = json.Unmarshal(buf.Bytes(), &Basket); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	st.Buckets[Bucket.UserID] = Bucket
+	st.Baskets[Basket.UserID] = Basket
 	w.WriteHeader(http.StatusCreated)
 }
 
