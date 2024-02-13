@@ -2,14 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	h "library_project/server/handlers"
+	l "library_project/server/postgresql"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
+	_, err := l.Connection()
+	if err != nil {
+		log.Fatal(err)
+	}
 	r := chi.NewRouter()
 	r.Get("/library/users", h.GetUsers)
 	r.Get("/library/veruser", h.VerifyUser)
@@ -30,7 +36,7 @@ func main() {
 	r.Post("/library/events", h.PostEvent)
 	r.Post("/library/orders", h.PostOrder)
 	r.Post("/library/users", h.PostUser)
-	r.Post("library/baskets", h.PostBasket)
+	r.Post("/library/baskets", h.PostBasket)
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		fmt.Printf("ошибка запуска сервера: %s\n", err.Error())

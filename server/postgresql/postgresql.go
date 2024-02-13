@@ -9,9 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// SelectAllUsers возвращает мапу из базы данных, которая заполняется записями о пользователях из неё
-func SelectAllUsers() map[int]structures.User {
-
+func Connection() (*sql.DB, error) {
 	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
 
@@ -19,6 +17,12 @@ func SelectAllUsers() map[int]structures.User {
 	if err != nil {
 		panic(err)
 	}
+	return db, err
+}
+
+// SelectAllUsers возвращает мапу из базы данных, которая заполняется записями о пользователях из неё
+func SelectAllUsers() map[int]structures.User {
+	db, _ := Connection()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM postgres.public.users")
 	if err != nil {
@@ -43,16 +47,10 @@ func SelectAllUsers() map[int]structures.User {
 
 // AddUser добавляет запись в базу данных из структуры в параметре в таблицу пользователей
 func AddUser(u *structures.User) {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
+	_, err := db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -63,13 +61,7 @@ func AddUser(u *structures.User) {
 }
 
 func SelectUserData(u *structures.UserVer) structures.User {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.users WHERE password='%s' AND email='%s'", u.Password, u.Email)
 	rows, err := db.Query(query)
@@ -89,13 +81,7 @@ func SelectUserData(u *structures.UserVer) structures.User {
 }
 
 func SelectAllOrders(id int) structures.OrderResponse {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.orders WHERE user_id=%d", id)
 	rows, err := db.Query(query)
@@ -119,11 +105,7 @@ func SelectAllOrders(id int) structures.OrderResponse {
 }
 
 func SelectBookEx(id int) structures.BookExemplar {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.bookexemplar WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -143,11 +125,7 @@ func SelectBookEx(id int) structures.BookExemplar {
 }
 
 func SelectBook(id int) structures.Book {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.books WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -168,13 +146,32 @@ func SelectBook(id int) structures.Book {
 	return B
 }
 
-func SelectAuthorsBook(id int) structures.AuthorBookResponse {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
+func SelectBooks() map[int]structures.Book {
+	db, _ := Connection()
+	defer db.Close()
+	query := fmt.Sprintf("SELECT * FROM postgres.public.books")
+	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
 	}
+	defer rows.Close()
+
+	Bm := map[int]structures.Book{}
+
+	for rows.Next() {
+		B := structures.Book{}
+		err := rows.Scan(&B.ID, &B.Name, &B.PublisherID, &B.GenreID, &B.SeriesID, &B.Isbn, &B.PubliishingYear, &B.Pages, &B.BindingID, &B.Size, &B.Format, &B.Circulation, &B.Annotation)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		Bm[B.ID] = B
+	}
+	return Bm
+}
+
+func SelectAuthorsBook(id int) structures.AuthorBookResponse {
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.authorbook WHERE book_id=%d", id)
 	rows, err := db.Query(query)
@@ -198,12 +195,7 @@ func SelectAuthorsBook(id int) structures.AuthorBookResponse {
 }
 
 func SelectAuthor(id int) structures.Author {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.authors WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -225,12 +217,7 @@ func SelectAuthor(id int) structures.Author {
 }
 
 func SelectPublisher(id int) structures.Publisher {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.publishers WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -252,12 +239,7 @@ func SelectPublisher(id int) structures.Publisher {
 }
 
 func SelectGenre(id int) structures.Genre {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.genres WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -279,12 +261,7 @@ func SelectGenre(id int) structures.Genre {
 }
 
 func SelectSeries(id int) structures.Series {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.series WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -306,12 +283,7 @@ func SelectSeries(id int) structures.Series {
 }
 
 func SelectEvent(id int) structures.Event {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.events WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -333,12 +305,7 @@ func SelectEvent(id int) structures.Event {
 }
 
 func SelectRoom(id int) structures.Room {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.rooms WHERE id=%d", id)
 	rows, err := db.Query(query)
@@ -360,15 +327,10 @@ func SelectRoom(id int) structures.Room {
 }
 
 func AddEvent(e *structures.Event) {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.events (name, room_id, user_id, event_date, people_count, info) VALUES ($1, $2, $3, $4, $5, $6)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty, e.Info)
+	_, err := db.Exec("INSERT INTO public.events (name, room_id, user_id, event_date, people_count, info) VALUES ($1, $2, $3, $4, $5, $6)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty, e.Info)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -379,15 +341,10 @@ func AddEvent(e *structures.Event) {
 }
 
 func AddOrder(o *structures.Order) {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	//Adding new data
 
-	_, err = db.Exec("INSERT INTO public.orders (book_exemplar_id, user_id, order_date) VALUES ($1, $2, $3)", o.BookExemplarID, o.UserID, o.OrderDate)
+	_, err := db.Exec("INSERT INTO public.orders (book_exemplar_id, user_id, order_date) VALUES ($1, $2, $3)", o.BookExemplarID, o.UserID, o.OrderDate)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
@@ -398,14 +355,9 @@ func AddOrder(o *structures.Order) {
 }
 
 func DelEv(id int) error {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return err
-	}
+	db, _ := Connection()
 	query := fmt.Sprintf("DELETE FROM public.events WHERE id=%d", id)
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 	if err != nil {
 		fmt.Println("problem with deleting event", err)
 		return err
@@ -414,12 +366,7 @@ func DelEv(id int) error {
 }
 
 func SelectBindings(id int) structures.Bindings {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	db, _ := Connection()
 	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.bindings WHERE id=%d", id)
 	rows, err := db.Query(query)
