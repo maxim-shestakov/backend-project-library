@@ -60,6 +60,20 @@ func AddUser(u *structures.User) {
 	defer db.Close()
 }
 
+func SelectVerUser(login, password string) (int, error) {
+	var u structures.User
+	db, _ := Connection()
+	defer db.Close()
+	query := fmt.Sprintf("SELECT id FROM postgres.public.users WHERE password='%s' AND email='%s'", password, login)
+	row := db.QueryRow(query)
+	err := row.Scan(&u.ID)
+	if err != nil {
+		fmt.Printf("verUser: %v\n", err)
+		return 0, err
+	}
+	return u.ID, nil
+}
+
 func SelectUserData(u *structures.UserVer) structures.User {
 	db, _ := Connection()
 	defer db.Close()
@@ -91,7 +105,7 @@ func SelectAllOrders(id int) structures.OrderResponse {
 	defer rows.Close()
 
 	Orders := structures.OrderResponse{}
-
+	flag := true
 	for rows.Next() {
 		o := structures.Order{}
 		err := rows.Scan(&o.ID, &o.BookExemplarID, &o.UserID, &o.OrderDate)
@@ -99,6 +113,13 @@ func SelectAllOrders(id int) structures.OrderResponse {
 			fmt.Println(err)
 			continue
 		}
+		if flag {
+			Orders.ID = o.ID
+			Orders.UserID = o.UserID
+			Orders.OrderDate = o.OrderDate
+			flag = false
+		}
+
 		Orders.BookExemplarID = append(Orders.BookExemplarID, o.BookExemplarID)
 	}
 	return Orders
@@ -149,8 +170,7 @@ func SelectBook(id int) structures.Book {
 func SelectBooks() map[int]structures.Book {
 	db, _ := Connection()
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.books")
-	rows, err := db.Query(query)
+	rows, err := db.Query("SELECT * FROM postgres.public.books")
 	if err != nil {
 		panic(err)
 	}
@@ -282,26 +302,28 @@ func SelectSeries(id int) structures.Series {
 	return S
 }
 
-func SelectEvent(id int) structures.Event {
+func SelectEvent(id int) map[int]structures.Event {
 	db, _ := Connection()
 	defer db.Close()
-	query := fmt.Sprintf("SELECT * FROM postgres.public.events WHERE id=%d", id)
+	query := fmt.Sprintf("SELECT * FROM postgres.public.events WHERE user_id=%d", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
-	E := structures.Event{}
+	Evs := map[int]structures.Event{}
 
 	for rows.Next() {
+		E := structures.Event{}
 		err := rows.Scan(&E.ID, &E.Name, &E.RoomID, &E.UserID, &E.EventDate, &E.PeopleQty, &E.Info)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
+		Evs[E.ID] = E
 	}
-	return E
+	return Evs
 }
 
 func SelectRoom(id int) structures.Room {

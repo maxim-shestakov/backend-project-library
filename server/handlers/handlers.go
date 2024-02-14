@@ -2,26 +2,58 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"encoding/json"
 
 	"library_project/server/postgresql"
 	st "library_project/server/structures"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-	st.Users = postgresql.SelectAllUsers()
-	resp, err := json.Marshal(st.Users)
+var (
+	secret = []byte("gBElG5NThZSye")
+)
+
+func ReturnToken(w http.ResponseWriter, r *http.Request) {
+	var user st.UserVer
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	if err = json.Unmarshal(buf.Bytes(), &user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	payload := jwt.MapClaims{
+		"login":          user.Email,
+		"hashedpassword": user.Password,
+	}
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	SignedToken, _ := jwtToken.SignedString(secret)
+	tk := fmt.Sprintf("Bearer %s", SignedToken)
+	w.Header().Set("Authorization", tk)
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
+
+// func GetUsers(w http.ResponseWriter, r *http.Request) {
+// 	st.Users = postgresql.SelectAllUsers()
+// 	resp, err := json.Marshal(st.Users)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write(resp)
+// }
 
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	var user st.User
@@ -43,34 +75,77 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 func GetOrders(w http.ResponseWriter, r *http.Request) {
 	var ordresp st.OrderResponse
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if id == user_id {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		ordresp = postgresql.SelectAllOrders(id)
+		resp, err := json.Marshal(ordresp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
 	}
-	ordresp = postgresql.SelectAllOrders(id)
-	resp, err := json.Marshal(ordresp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
-func VerifyUser(w http.ResponseWriter, r *http.Request) {
-	var user st.UserVer
-	user.Password = r.URL.Query().Get("password")
-	user.Email = r.URL.Query().Get("email")
-	UserResp := postgresql.SelectUserData(&user)
-	resp, err := json.Marshal(UserResp)
+//	func VerifyUser(w http.ResponseWriter, r *http.Request) {
+//		var user st.UserVer
+//		user.Password = r.URL.Query().Get("password")
+//		user.Email = r.URL.Query().Get("email")
+//		UserResp := postgresql.SelectUserData(&user)
+//		resp, err := json.Marshal(UserResp)
+//		if err != nil {
+//			http.Error(w, err.Error(), http.StatusInternalServerError)
+//			return
+//		}
+//		w.Header().Set("Content-Type", "application/json")
+//		w.WriteHeader(http.StatusOK)
+//		w.Write(resp)
+//	}
+
+func verifyUser(token string) (bool, int) {
+	jwtToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		return secret, nil
+	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		fmt.Printf("Failed to parse token: %s\n", err)
+		return false, -1
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	if !jwtToken.Valid {
+		return false, -1
+	}
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, -1
+	}
+	loginRaw, ok := claims["login"]
+	if !ok {
+		return false, -1
+	}
+	login, ok := loginRaw.(string)
+	if !ok {
+		return false, -1
+	}
+	passwordRaw, ok := claims["hashedpassword"]
+	if !ok {
+		return false, -1
+	}
+	password, ok := passwordRaw.(string)
+	if !ok {
+		return false, -1
+	}
+	id, err := postgresql.SelectVerUser(login, password)
+	if err != nil {
+		return false, -1
+	}
+	return true, id
 }
 
 func GetBookEx(w http.ResponseWriter, r *http.Request) {
@@ -197,20 +272,25 @@ func GetSeries(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetEvent(w http.ResponseWriter, r *http.Request) {
+func GetEvents(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	EvResp := postgresql.SelectEvent(id)
-	resp, err := json.Marshal(EvResp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if id == user_id {
+		EvResp := postgresql.SelectEvent(id)
+		resp, err := json.Marshal(EvResp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
 func GetRoom(w http.ResponseWriter, r *http.Request) {
@@ -242,8 +322,13 @@ func PostEvent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	postgresql.AddEvent(&event)
-	w.WriteHeader(http.StatusCreated)
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if event.UserID == user_id {
+		postgresql.AddEvent(&event)
+		w.WriteHeader(http.StatusCreated)
+	}
 }
 
 func PostOrder(w http.ResponseWriter, r *http.Request) {
@@ -259,8 +344,13 @@ func PostOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	postgresql.AddOrder(&order)
-	w.WriteHeader(http.StatusCreated)
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if order.UserID == user_id {
+		postgresql.AddOrder(&order)
+		w.WriteHeader(http.StatusCreated)
+	}
 }
 
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
@@ -268,11 +358,16 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	err = postgresql.DelEv(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if id == user_id {
+		err = postgresql.DelEv(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		w.WriteHeader(http.StatusOK)
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 func PostBasket(w http.ResponseWriter, r *http.Request) {
@@ -288,8 +383,13 @@ func PostBasket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	st.Baskets[Basket.UserID] = Basket
-	w.WriteHeader(http.StatusCreated)
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if Basket.UserID == user_id {
+		st.Baskets[Basket.UserID] = Basket
+		w.WriteHeader(http.StatusCreated)
+	}
 }
 
 func GetBasket(w http.ResponseWriter, r *http.Request) {
@@ -297,14 +397,19 @@ func GetBasket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	resp, err := json.Marshal(st.Baskets[id])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	authHeader := r.Header.Get("Authorization")        //получение токена с типом данных
+	token := strings.TrimPrefix(authHeader, "Bearer ") //отделение токена от типа данных
+	_, user_id := verifyUser(token)                    //соотношение токена с БД
+	if id == user_id {
+		resp, err := json.Marshal(st.Baskets[id])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 }
 
 func GetBinding(w http.ResponseWriter, r *http.Request) {
