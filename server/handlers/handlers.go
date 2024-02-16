@@ -9,14 +9,11 @@ import (
 
 	"encoding/json"
 
-	"library_project/server/postgresql"
-	st "library_project/server/structures"
+	"backend-project-library/server/postgresql"
+	"backend-project-library/server/structures"
+	st "backend-project-library/server/structures"
 
 	"github.com/golang-jwt/jwt/v5"
-)
-
-var (
-	secret = []byte("gBElG5NThZSye")
 )
 
 func ReturnToken(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +34,7 @@ func ReturnToken(w http.ResponseWriter, r *http.Request) {
 		"hashedpassword": user.Password,
 	}
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	SignedToken, _ := jwtToken.SignedString(secret)
+	SignedToken, _ := jwtToken.SignedString(structures.Secret)
 	tk := fmt.Sprintf("Bearer %s", SignedToken)
 	w.Header().Set("Authorization", tk)
 	w.WriteHeader(http.StatusOK)
@@ -112,38 +109,38 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 
 func verifyUser(token string) (bool, int) {
 	jwtToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		return secret, nil
+		return structures.Secret, nil
 	})
 	if err != nil {
 		fmt.Printf("Failed to parse token: %s\n", err)
-		return false, -1
+		return false, 0
 	}
 	if !jwtToken.Valid {
-		return false, -1
+		return false, 0
 	}
 	claims, ok := jwtToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return false, -1
+		return false, 0
 	}
 	loginRaw, ok := claims["login"]
 	if !ok {
-		return false, -1
+		return false, 0
 	}
 	login, ok := loginRaw.(string)
 	if !ok {
-		return false, -1
+		return false, 0
 	}
 	passwordRaw, ok := claims["hashedpassword"]
 	if !ok {
-		return false, -1
+		return false, 0
 	}
 	password, ok := passwordRaw.(string)
 	if !ok {
-		return false, -1
+		return false, 0
 	}
 	id, err := postgresql.SelectVerUser(login, password)
 	if err != nil {
-		return false, -1
+		return false, 0
 	}
 	return true, id
 }

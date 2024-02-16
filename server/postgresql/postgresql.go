@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
-	"library_project/server/structures"
+	"backend-project-library/server/structures"
 
 	_ "github.com/lib/pq"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func Connection() (*sql.DB, error) {
@@ -49,7 +51,14 @@ func SelectAllUsers() map[int]structures.User {
 func AddUser(u *structures.User) {
 	db, _ := Connection()
 	//Adding new data
-
+	Uv := structures.UserVer{Email: u.Email, Password: u.Password}
+	payload := jwt.MapClaims{
+		"login":          Uv.Email,
+		"hashedpassword": Uv.Password,
+	}
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	SignedToken, _ := jwtToken.SignedString(structures.Secret)
+	u.Password = SignedToken
 	_, err := db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)

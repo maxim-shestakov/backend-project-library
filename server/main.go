@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	h "library_project/server/handlers"
-	l "library_project/server/postgresql"
+	h "backend-project-library/server/handlers"
+	l "backend-project-library/server/postgresql"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,8 +19,7 @@ func main() {
 		log.Fatal(err)
 	}
 	r := chi.NewRouter()
-	r.Get("/library/users", h.GetUsers)
-	//r.Get("/library/veruser", h.VerifyUser)
+	//r.Get("/library/users", h.GetUsers)
 	r.Get("/library/orders", h.GetOrders)
 	r.Get("/library/bookex", h.GetBookEx)
 	r.Get("/library/book", h.GetBook)
