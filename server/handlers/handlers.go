@@ -40,18 +40,6 @@ func ReturnToken(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// func GetUsers(w http.ResponseWriter, r *http.Request) {
-// 	st.Users = postgresql.SelectAllUsers()
-// 	resp, err := json.Marshal(st.Users)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write(resp)
-// }
-
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	var user st.User
 	var buf bytes.Buffer
@@ -91,21 +79,6 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		w.Write(resp)
 	}
 }
-
-//	func VerifyUser(w http.ResponseWriter, r *http.Request) {
-//		var user st.UserVer
-//		user.Password = r.URL.Query().Get("password")
-//		user.Email = r.URL.Query().Get("email")
-//		UserResp := postgresql.SelectUserData(&user)
-//		resp, err := json.Marshal(UserResp)
-//		if err != nil {
-//			http.Error(w, err.Error(), http.StatusInternalServerError)
-//			return
-//		}
-//		w.Header().Set("Content-Type", "application/json")
-//		w.WriteHeader(http.StatusOK)
-//		w.Write(resp)
-//	}
 
 func verifyUser(token string) (bool, int) {
 	jwtToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {

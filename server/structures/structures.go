@@ -117,26 +117,10 @@ type Basket struct {
 //Хранилища:
 
 // Users - хранилище для отправки ответов сервера фронтенду
-var Users = map[int]User{}
-
-var Orders = map[int]Order{}
-
-var BookExemplars = map[int]BookExemplar{}
-
-var Books = map[int]Book{}
-
-var AuthorsBook = map[int]AuthorBook{}
-
-var Authors = map[int]Author{}
-
-var Publishers = map[int]Publisher{}
-
-var Genres = map[int]Genre{}
-
-var SeriesSt = map[int]Series{}
-
-var Events = map[int]Event{}
-
-var Rooms = map[int]Room{}
 
 var Baskets = map[int]Basket{}
+
+// Переменные
+var (
+	Secret = []byte("gBElG5NThZSye")
+)

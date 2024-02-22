@@ -1,32 +1,20 @@
 package postgresql
 
 import (
-	"database/sql"
 	"fmt"
 
 	"backend-project-library/server/structures"
+
+	l "backend-project-library/server/dbconn"
 
 	_ "github.com/lib/pq"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func Connection() (*sql.DB, error) {
-	connStr := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	// connStr := "user=postgres password=123 dbname=postgres sslmode=disable"
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
-	return db, err
-}
-
 // SelectAllUsers возвращает мапу из базы данных, которая заполняется записями о пользователях из неё
 func SelectAllUsers() map[int]structures.User {
-	db, _ := Connection()
-	defer db.Close()
-	rows, err := db.Query("SELECT * FROM postgres.public.users")
+	rows, err := l.Db.Query("SELECT * FROM postgres.public.users")
 	if err != nil {
 		panic(err)
 	}
@@ -49,8 +37,6 @@ func SelectAllUsers() map[int]structures.User {
 
 // AddUser добавляет запись в базу данных из структуры в параметре в таблицу пользователей
 func AddUser(u *structures.User) {
-	db, _ := Connection()
-	//Adding new data
 	Uv := structures.UserVer{Email: u.Email, Password: u.Password}
 	payload := jwt.MapClaims{
 		"login":          Uv.Email,
@@ -59,22 +45,18 @@ func AddUser(u *structures.User) {
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	SignedToken, _ := jwtToken.SignedString(structures.Secret)
 	u.Password = SignedToken
-	_, err := db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
+	_, err := l.Db.Exec("INSERT INTO public.users (name, surname, father_name, phone_number, email, birthday, card_id, rating, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", u.Name, u.Surname, u.FatherName, u.PhoneNumber, u.Email, u.Birthday, u.CardID, u.Rating, u.Password)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
 		fmt.Println("user was appended successfully")
 	}
-
-	defer db.Close()
 }
 
 func SelectVerUser(login, password string) (int, error) {
 	var u structures.User
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT id FROM postgres.public.users WHERE password='%s' AND email='%s'", password, login)
-	row := db.QueryRow(query)
+	row := l.Db.QueryRow(query)
 	err := row.Scan(&u.ID)
 	if err != nil {
 		fmt.Printf("verUser: %v\n", err)
@@ -84,10 +66,8 @@ func SelectVerUser(login, password string) (int, error) {
 }
 
 func SelectUserData(u *structures.UserVer) structures.User {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.users WHERE password='%s' AND email='%s'", u.Password, u.Email)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -104,10 +84,8 @@ func SelectUserData(u *structures.UserVer) structures.User {
 }
 
 func SelectAllOrders(id int) structures.OrderResponse {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.orders WHERE user_id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -135,10 +113,8 @@ func SelectAllOrders(id int) structures.OrderResponse {
 }
 
 func SelectBookEx(id int) structures.BookExemplar {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.bookexemplar WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -155,10 +131,8 @@ func SelectBookEx(id int) structures.BookExemplar {
 }
 
 func SelectBook(id int) structures.Book {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.books WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -177,9 +151,7 @@ func SelectBook(id int) structures.Book {
 }
 
 func SelectBooks() map[int]structures.Book {
-	db, _ := Connection()
-	defer db.Close()
-	rows, err := db.Query("SELECT * FROM postgres.public.books")
+	rows, err := l.Db.Query("SELECT * FROM postgres.public.books")
 	if err != nil {
 		panic(err)
 	}
@@ -200,10 +172,8 @@ func SelectBooks() map[int]structures.Book {
 }
 
 func SelectAuthorsBook(id int) structures.AuthorBookResponse {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.authorbook WHERE book_id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -224,10 +194,8 @@ func SelectAuthorsBook(id int) structures.AuthorBookResponse {
 }
 
 func SelectAuthor(id int) structures.Author {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.authors WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -246,10 +214,8 @@ func SelectAuthor(id int) structures.Author {
 }
 
 func SelectPublisher(id int) structures.Publisher {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.publishers WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -268,10 +234,8 @@ func SelectPublisher(id int) structures.Publisher {
 }
 
 func SelectGenre(id int) structures.Genre {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.genres WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -290,10 +254,8 @@ func SelectGenre(id int) structures.Genre {
 }
 
 func SelectSeries(id int) structures.Series {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.series WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -312,10 +274,8 @@ func SelectSeries(id int) structures.Series {
 }
 
 func SelectEvent(id int) map[int]structures.Event {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.events WHERE user_id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -336,10 +296,8 @@ func SelectEvent(id int) map[int]structures.Event {
 }
 
 func SelectRoom(id int) structures.Room {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.rooms WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -358,37 +316,26 @@ func SelectRoom(id int) structures.Room {
 }
 
 func AddEvent(e *structures.Event) {
-	db, _ := Connection()
-	//Adding new data
-
-	_, err := db.Exec("INSERT INTO public.events (name, room_id, user_id, event_date, people_count, info) VALUES ($1, $2, $3, $4, $5, $6)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty, e.Info)
+	_, err := l.Db.Exec("INSERT INTO public.events (name, room_id, user_id, event_date, people_count, info) VALUES ($1, $2, $3, $4, $5, $6)", e.Name, e.RoomID, e.UserID, e.EventDate, e.PeopleQty, e.Info)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
 		fmt.Println("event was appended successfully")
 	}
-
-	defer db.Close()
 }
 
 func AddOrder(o *structures.Order) {
-	db, _ := Connection()
-	//Adding new data
-
-	_, err := db.Exec("INSERT INTO public.orders (book_exemplar_id, user_id, order_date) VALUES ($1, $2, $3)", o.BookExemplarID, o.UserID, o.OrderDate)
+	_, err := l.Db.Exec("INSERT INTO public.orders (book_exemplar_id, user_id, order_date) VALUES ($1, $2, $3)", o.BookExemplarID, o.UserID, o.OrderDate)
 	if err != nil {
 		fmt.Printf("addUser: %v\n", err)
 	} else {
 		fmt.Println("order was appended successfully")
 	}
-
-	defer db.Close()
 }
 
 func DelEv(id int) error {
-	db, _ := Connection()
 	query := fmt.Sprintf("DELETE FROM public.events WHERE id=%d", id)
-	_, err := db.Exec(query)
+	_, err := l.Db.Exec(query)
 	if err != nil {
 		fmt.Println("problem with deleting event", err)
 		return err
@@ -397,10 +344,8 @@ func DelEv(id int) error {
 }
 
 func SelectBindings(id int) structures.Bindings {
-	db, _ := Connection()
-	defer db.Close()
 	query := fmt.Sprintf("SELECT * FROM postgres.public.bindings WHERE id=%d", id)
-	rows, err := db.Query(query)
+	rows, err := l.Db.Query(query)
 	if err != nil {
 		panic(err)
 	}

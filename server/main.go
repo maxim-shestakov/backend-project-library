@@ -2,22 +2,17 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
+	l "backend-project-library/server/dbconn"
 	h "backend-project-library/server/handlers"
-	l "backend-project-library/server/postgresql"
 
 	"github.com/go-chi/chi/v5"
 )
 
-var SignedToken string
-
 func main() {
-	_, err := l.Connection()
-	if err != nil {
-		log.Fatal(err)
-	}
+	l.Db = l.Connection(l.Db)
+	defer l.Db.Close()
 	r := chi.NewRouter()
 	//r.Get("/library/users", h.GetUsers)
 	r.Get("/library/orders", h.GetOrders)
